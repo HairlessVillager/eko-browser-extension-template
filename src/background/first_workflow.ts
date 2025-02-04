@@ -17,10 +17,6 @@ export async function main(prompt: string) {
   // Generate a workflow from natural language description
   const workflow = await eko.generate(prompt);
 
-  console.log("Debug the workflow...");
-  console.log(workflow);
-  console.log("Debug the workflow...Done");
-  
   // Execute the workflow
   await eko.execute(workflow, hookLogs());
 }
@@ -48,15 +44,6 @@ function hookLogs(): WorkflowCallback {
       afterWorkflow: async (workflow, variables) => {
         printLog("Completed", "success");
       },
-      onHumanInputText: async (question: string) => {
-        return "";
-      },
-      onHumanOperate: async (reason: string) => {
-        return "";
-      },
-      onHumanInputSingleChoice: async (question: string, choices: string[]) => {
-        return "Yes, I approve the draft";
-      }
     },
   };
 }
