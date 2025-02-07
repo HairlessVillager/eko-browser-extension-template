@@ -110,7 +110,7 @@ const AppRun = () => {
           value={outline}
           disabled={running}
           placeholder="Outline"
-          onChange={(e) => setRole(e.target.value)}
+          onChange={(e) => setOutline(e.target.value)}
         />
         <Input.TextArea
           ref={textAreaRef}
@@ -118,7 +118,7 @@ const AppRun = () => {
           value={reference}
           disabled={running}
           placeholder="Reference"
-          onChange={(e) => setRole(e.target.value)}
+          onChange={(e) => setReference(e.target.value)}
         />
         <Button
           type="primary"
