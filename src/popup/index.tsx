@@ -13,12 +13,11 @@ const AppRun = () => {
   const [logs, setLogs] = useState<LogMessage[]>([]);
   const logsRef = useRef<HTMLDivElement>(null);
   const textAreaRef = useRef<HTMLTextAreaElement>(null);
-  const [prompt, setPrompt] = useState(
-    "Search Sam Altman's information and summarize it into markdown format for export"
-  );
+  const [prompt, setPrompt] = useState("1");
+  
 
   useEffect(() => {
-    chrome.storage.local.get(["running", "prompt"], (result) => {
+    chrome.storage.local.get(["running", "role", "outline", "reference"], (result) => {
       if (result.running !== undefined) {
         setRunning(result.running);
       }
@@ -57,7 +56,10 @@ const AppRun = () => {
     setLogs([]);
     setRunning(true);
     chrome.storage.local.set({ running: true, prompt });
-    chrome.runtime.sendMessage({ type: "run", prompt: prompt.trim() });
+    chrome.runtime.sendMessage({
+      type: "run",
+      prompt: prompt.trim(),
+    });
   };
 
   const getLogStyle = (level: string) => {
@@ -89,7 +91,7 @@ const AppRun = () => {
           rows={4}
           value={prompt}
           disabled={running}
-          placeholder="Your workflow"
+          placeholder="Prompt"
           onChange={(e) => setPrompt(e.target.value)}
         />
         <Button

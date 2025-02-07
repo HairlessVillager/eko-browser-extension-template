@@ -20,6 +20,7 @@ chrome.runtime.onMessage.addListener(async function (
       // Run workflow
       await main(request.prompt);
     } catch (e) {
+      console.error(e);
       chrome.runtime.sendMessage({
         type: "log",
         log: e.message,
