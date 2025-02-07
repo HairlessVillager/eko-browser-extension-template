@@ -13,17 +13,24 @@ const AppRun = () => {
   const [logs, setLogs] = useState<LogMessage[]>([]);
   const logsRef = useRef<HTMLDivElement>(null);
   const textAreaRef = useRef<HTMLTextAreaElement>(null);
-  const [prompt, setPrompt] = useState(
-    "Search Sam Altman's information and summarize it into markdown format for export"
-  );
+  const [role, setRole] = useState("");
+  const [outline, setOutline] = useState("");
+  const [reference, setReference] = useState("");
+  
 
   useEffect(() => {
-    chrome.storage.local.get(["running", "prompt"], (result) => {
+    chrome.storage.local.get(["running", "role", "outline", "reference"], (result) => {
       if (result.running !== undefined) {
         setRunning(result.running);
       }
-      if (result.prompt !== undefined) {
-        setPrompt(result.prompt);
+      if (result.role !== undefined) {
+        setRole(result.role);
+      }
+      if (result.outline !== undefined) {
+        setRole(result.outline);
+      }
+      if (result.reference !== undefined) {
+        setRole(result.reference);
       }
     });
     const messageListener = (message: any) => {
@@ -51,13 +58,18 @@ const AppRun = () => {
   }, [logs]);
 
   const handleClick = () => {
-    if (!prompt.trim()) {
+    if (!role.trim() && !outline.trim() && !reference.trim()) {
       return;
     }
     setLogs([]);
     setRunning(true);
-    chrome.storage.local.set({ running: true, prompt });
-    chrome.runtime.sendMessage({ type: "run", prompt: prompt.trim() });
+    chrome.storage.local.set({ running: true, role, outline, reference});
+    chrome.runtime.sendMessage({
+      type: "run",
+      role: role.trim(),
+      outline: outline.trim(),
+      reference: reference.trim(),
+    });
   };
 
   const getLogStyle = (level: string) => {
@@ -87,10 +99,26 @@ const AppRun = () => {
         <Input.TextArea
           ref={textAreaRef}
           rows={4}
-          value={prompt}
+          value={role}
           disabled={running}
-          placeholder="Your workflow"
-          onChange={(e) => setPrompt(e.target.value)}
+          placeholder="Role"
+          onChange={(e) => setRole(e.target.value)}
+        />
+        <Input.TextArea
+          ref={textAreaRef}
+          rows={4}
+          value={outline}
+          disabled={running}
+          placeholder="Outline"
+          onChange={(e) => setRole(e.target.value)}
+        />
+        <Input.TextArea
+          ref={textAreaRef}
+          rows={4}
+          value={reference}
+          disabled={running}
+          placeholder="Reference"
+          onChange={(e) => setRole(e.target.value)}
         />
         <Button
           type="primary"
