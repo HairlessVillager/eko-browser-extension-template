@@ -1,5 +1,5 @@
 import { Eko, LLMProviderFactory, ToolRegistry, WorkflowGenerator, WorkflowParser } from "@eko-ai/eko";
-import { EkoConfig, WorkflowCallback } from "@eko-ai/eko/types";
+import { EkoConfig, LLMConfig, WorkflowCallback } from "@eko-ai/eko/types";
 import { getLLMConfig } from "@eko-ai/eko/extension";
 
 export async function main(role: string, outline: string, reference: string) {
@@ -120,7 +120,7 @@ export async function main(role: string, outline: string, reference: string) {
     }
   };
   console.log("LLMProviderFactory.buildLLMProvider()...");
-  const llmProvider = LLMProviderFactory.buildLLMProvider(config as EkoConfig);
+  const llmProvider = LLMProviderFactory.buildLLMProvider(config as LLMConfig);
 
   console.log("build ToolRegistry...");
   let toolRegistry = new ToolRegistry()
@@ -130,21 +130,21 @@ export async function main(role: string, outline: string, reference: string) {
   const generator = new WorkflowGenerator(llmProvider, toolRegistry);
 
   console.log("generator.generateWorkflowFromJson()...");
-  let workflow = await generator.generateWorkflowFromJson(json);
+  let workflow = await generator.generateWorkflowFromJson(json, {});
   
   console.log(workflow);
 
-  let workflow_s = WorkflowParser.serialize(workflow);
-  console.log(workflow_s);
+  // let workflow_s = WorkflowParser.serialize(workflow);
+  // console.log(workflow_s);
   
-  workflow = WorkflowParser.parse(workflow_s);
-  console.log(workflow);
+  // workflow = WorkflowParser.parse(workflow_s, {});
+  // console.log(workflow);
 
   console.log(Eko.tools);
 
   // Execute the workflow
-  let eko = new Eko(config as EkoConfig);
-  await eko.execute(workflow, hookLogs());
+  let eko = new Eko(config as LLMConfig, { callback: hookLogs() });
+  await eko.execute(workflow);
 }
 
 function hookLogs(): WorkflowCallback {
