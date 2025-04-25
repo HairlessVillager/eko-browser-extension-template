@@ -1,24 +1,36 @@
-import { Eko } from "@eko-ai/eko";
-import { LLMConfig, WorkflowCallback } from "@eko-ai/eko/types";
+import { Eko, createChromeApiProxy } from "@eko-ai/eko";
+import { LLMConfig, WorkflowCallback, Workflow } from "@eko-ai/eko/types";
 import { getLLMConfig } from "@eko-ai/eko/extension";
 
+class MyChromeProxy {
+  public static windows_create(createData: chrome.windows.CreateData): Promise<chrome.windows.Window> {
+    console.log("this will create a window");
+    return chrome.windows.create(createData);
+  }
+}
+
+let eko: Eko;
+let currentWorkflow: Workflow;
+
 export async function main(prompt: string) {
-  // Load LLM model configuration
-  // the current browser plugin project provides a page for configuring LLM parameters
-  let config = await getLLMConfig();
+  let chromeProxy = createChromeApiProxy(MyChromeProxy);
+  let config = await getLLMConfig(chromeProxy);
   if (!config || !config.apiKey) {
     printLog("Please configure apiKey", "error");
     return;
   }
 
-  // Initialize eko
-  let eko = new Eko(config as LLMConfig);
+  eko = new Eko(config as LLMConfig, { callback: hookLogs(), chromeProxy: chromeProxy });
 
-  // Generate a workflow from natural language description
-  const workflow = await eko.generate(prompt);
+  currentWorkflow = await eko.generate(prompt);
 
-  // Execute the workflow
-  await eko.execute(workflow, hookLogs());
+  await eko.execute(currentWorkflow);
+}
+
+export async function cancelWorkflow() {
+  if (currentWorkflow) {
+    await eko.cancel(currentWorkflow);
+  }
 }
 
 function hookLogs(): WorkflowCallback {
@@ -43,6 +55,9 @@ function hookLogs(): WorkflowCallback {
       },
       afterWorkflow: async (workflow, variables) => {
         printLog("Completed", "success");
+      },
+      onLlmMessage: async (textContent) => {
+        printLog("LLM: " + textContent);
       },
     },
   };

@@ -10,6 +10,7 @@ interface LogMessage {
 
 const AppRun = () => {
   const [running, setRunning] = useState(false);
+  const [canceling, setCanceling] = useState(false);
   const [logs, setLogs] = useState<LogMessage[]>([]);
   const logsRef = useRef<HTMLDivElement>(null);
   const textAreaRef = useRef<HTMLTextAreaElement>(null);
@@ -18,17 +19,21 @@ const AppRun = () => {
   );
 
   useEffect(() => {
-    chrome.storage.local.get(["running", "prompt"], (result) => {
+    chrome.storage.local.get(["running", "prompt", "canceling"], (result) => {
       if (result.running !== undefined) {
         setRunning(result.running);
       }
       if (result.prompt !== undefined) {
         setPrompt(result.prompt);
       }
+      if (result.canceling !== undefined) {
+        setCanceling(result.canceling);
+      }
     });
     const messageListener = (message: any) => {
       if (message.type === "stop") {
         setRunning(false);
+        setCanceling(false);
         chrome.storage.local.set({ running: false });
       } else if (message.type === "log") {
         const time = new Date().toLocaleTimeString();
@@ -56,9 +61,16 @@ const AppRun = () => {
     }
     setLogs([]);
     setRunning(true);
+    setCanceling(false);
     chrome.storage.local.set({ running: true, prompt });
     chrome.runtime.sendMessage({ type: "run", prompt: prompt.trim() });
   };
+
+  const handleCancel = () =>{
+    setCanceling(true);
+    chrome.storage.local.set({ canceling: true, prompt });
+    chrome.runtime.sendMessage({ type: "cancel" });
+  }
 
   const getLogStyle = (level: string) => {
     switch (level) {
@@ -74,16 +86,16 @@ const AppRun = () => {
   return (
     <div
       style={{
-        minWidth: "360px",
         minHeight: "80px",
       }}
     >
+      <div>Prompt:</div>
       <div
         style={{
           textAlign: "center",
+          marginTop: "4px",
         }}
       >
-        <h3>Eko Workflow</h3>
         <Input.TextArea
           ref={textAreaRef}
           rows={4}
@@ -97,11 +109,27 @@ const AppRun = () => {
           onClick={handleClick}
           disabled={running}
           style={{
-            marginTop: "4px",
+            marginTop: "8px",
           }}
         >
           {running ? "Running..." : "Run"}
         </Button>
+        
+        <Button
+          type="primary"
+          onClick={handleCancel}
+          disabled={canceling || !running}
+          style={{
+            marginTop: "4px",
+            left: "10px",
+            backgroundColor: canceling ? "#ffcccc" : "#ff4d4f",
+            borderColor: canceling ? "#ffcccc" : "#ff4d4f",
+            color: canceling ? "#555555" : "#fff" 
+          }}
+        >
+          {canceling ? "Canceling..." : "Cancel"}
+        </Button>
+        
       </div>
       {logs.length > 0 && (
         <div
@@ -112,8 +140,6 @@ const AppRun = () => {
             border: "1px solid #d9d9d9",
             borderRadius: "4px",
             padding: "8px",
-            width: "360px",
-            height: "220px",
             overflowY: "auto",
             backgroundColor: "#f5f5f5",
           }}
